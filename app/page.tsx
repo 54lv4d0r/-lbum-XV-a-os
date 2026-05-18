@@ -94,28 +94,26 @@ export default function GalleryPage() {
         throw error
       }
 
+      console.log("[v0] Raw files inside 'invitados':", files)
+
+      // 1. Filtramos solo extensiones válidas de imagen que estén dentro de la carpeta
       const imageFiles = (files || []).filter((file) => {
         const ext = file.name.toLowerCase().split(".").pop()
         return ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
       })
 
-      // ¡AQUÍ ESTÁ LA DETECCIÓN INTELIGENTE DE RUTA COMPLETA!
+      // 2. Mapeo ultra-limpio e infalible
       const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
-        // 1. Extraemos el nombre base del archivo puro (quitando la palabra 'invitados/' si viene integrada)
-        let pureFileName = file.name
-        if (pureFileName.startsWith("invitados/")) {
-          pureFileName = pureFileName.replace("invitados/", "")
-        }
-
-        // 2. Extraemos el nombre del invitado para la etiqueta de texto debajo de la foto
+        // Obtenemos el nombre del archivo (ej: guest_salvador_123.jpg)
+        const pureFileName = file.name
+        
+        // Limpiamos el prefijo para sacar el nombre del invitado
         const cleanName = pureFileName.startsWith("guest_") ? pureFileName.replace("guest_", "") : pureFileName
         const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
-        // 3. Construimos la URL pública definitiva asegurándonos de no duplicar subcarpetas
+        // Forzamos la estructura URL perfecta que Supabase necesita para mostrar el archivo públicamente
         const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${ACTUAL_BUCKET}/invitados/${pureFileName}`
-
-        console.log("[v0] URL final calculada:", publicUrl)
 
         return {
           name: pureFileName,
@@ -125,7 +123,10 @@ export default function GalleryPage() {
         }
       })
 
+      // Ordenar por fecha (más recientes primero)
       guestPhotoList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      
+      console.log("[v0] Final processed guest photos:", guestPhotoList)
       setGuestPhotos(guestPhotoList)
     } catch (err) {
       console.error("[v0] Error fetching guest photos:", err)
