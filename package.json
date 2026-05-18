@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "mkdir -p .v0 && touch .v0/inject-built-with-v0.mjs && next build",
     "start": "next start",
     "lint": "eslint ."
   },
