@@ -23,8 +23,6 @@ interface GuestPhoto {
   createdAt: Date
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://figtuyydceiqcqqlyzhj.supabase.co"
-
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [guestPhotos, setGuestPhotos] = useState<GuestPhoto[]>([])
@@ -33,22 +31,20 @@ export default function GalleryPage() {
   const [error, setError] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // 1. CARGAR FOTOS PRINCIPALES (PRUEBA CON AMBOS BUCKETS: "fotos" y "FOTOS")
+  // 1. CARGAR FOTOS PRINCIPALES (CON BÚSQUEDA HÍBRIDA DE BUCKET)
   useEffect(() => {
     async function fetchPhotos() {
       try {
         console.log("[v0] Intentando cargar fotos principales...")
         
-        // Intentamos primero con minúsculas que era como funcionaba originalmente
-        let bucketName = "fotos"
+        let bucketName = "fotos" // Intento 1: minúsculas
         let { data: files, error: listError } = await supabase.storage
           .from(bucketName)
           .list("", { limit: 100, offset: 0 })
 
-        // Si da error o viene vacío, intentamos con Mayúsculas
         if (listError || !files || files.length === 0) {
-          console.log("[v0] No se hallaron fotos en 'fotos', probando con 'FOTOS'...")
-          bucketName = "FOTOS"
+          console.log("[v0] Probando con 'FOTOS' (mayúsculas)...")
+          bucketName = "FOTOS" // Intento 2: mayúsculas
           const { data: retryFiles } = await supabase.storage
             .from(bucketName)
             .list("", { limit: 100, offset: 0 })
@@ -57,15 +53,22 @@ export default function GalleryPage() {
 
         const imageFiles = (files || []).filter((file) => {
           const ext = file.name.toLowerCase().split(".").pop()
-          const isGuestPhoto = file.name.toLowerCase().startsWith("guest_") || file.name.toLowerCase() === "invitados"
-          return !isGuestPhoto && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
+          const isGuest = file.name.toLowerCase().startsWith("guest_") || file.name.toLowerCase() === "invitados"
+          return !isGuest && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
         })
 
-        const photoList: Photo[] = imageFiles.map((file, index: number) => ({
-          id: file.id || `photo-${index}`,
-          url: `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${file.name}`,
-          name: file.name,
-        }))
+        const photoList = imageFiles.map((file, index) => {
+          // GENERACIÓN DE URL OFICIAL DE SUPABASE (Infalible)
+          const { data } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(file.name)
+            
+          return {
+            id: file.id || `photo-${index}`,
+            url: data.publicUrl, // La URL ya viene perfecta
+            name: file.name,
+          }
+        })
 
         setPhotos(photoList)
       } catch (err) {
@@ -79,45 +82,50 @@ export default function GalleryPage() {
     fetchPhotos()
   }, [])
 
-  // 2. CARGAR FOTOS DE INVITADOS (BUSCA EN AMBAS CARPETAS Y BUCKETS)
+  // 2. CARGAR FOTOS DE INVITADOS (USANDO GETPUBLICURL OFICIAL)
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
       console.log("[v0] Buscando fotos de invitados...")
       
-      // Intentamos buscar en el bucket 'FOTOS' carpeta 'invitados'
-      let currentBucket = "FOTOS"
-      let currentFolder = "invitados"
+      let currentBucket = "FOTOS" // Intento 1: mayúsculas (donde están las nuevas subidas)
+      const currentFolder = "invitados"
       
       let { data: files, error: guestError } = await supabase.storage
         .from(currentBucket)
         .list(currentFolder, { limit: 100, offset: 0 })
 
-      // Si viene vacío, probamos combinaciones con minúsculas
       if (guestError || !files || files.length === 0) {
-        currentBucket = "fotos"
+        console.log("[v0] Probando con 'fotos' (minúsculas) carpeta invitados...")
+        currentBucket = "fotos" // Intento 2: minúsculas
         const { data: retryFiles } = await supabase.storage
           .from(currentBucket)
           .list(currentFolder, { limit: 100, offset: 0 })
         files = retryFiles
       }
 
+      console.log(`[v0] Archivos leídos en ${currentBucket}/${currentFolder}:`, files?.length || 0)
+
       const imageFiles = (files || []).filter((file) => {
         const ext = file.name.toLowerCase().split(".").pop()
         return ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
       })
 
-      const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
+      const guestPhotoList = imageFiles.map((file) => {
+        // Limpieza del nombre para sacar el invitado
         const cleanName = file.name.startsWith("guest_") ? file.name.replace("guest_", "") : file.name
         const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
-        // URL construida dinámicamente con el bucket que sí devolvió datos
-        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${currentBucket}/${currentFolder}/${file.name}`
+        // ¡LA SOLUCIÓN! GENERACIÓN DE URL OFICIAL DE SUPABASE
+        // Le pasamos la ruta completa 'invitados/nombre_archivo.jpg'
+        const { data } = supabase.storage
+          .from(currentBucket)
+          .getPublicUrl(`${currentFolder}/${file.name}`)
 
         return {
           name: file.name,
-          url: publicUrl,
+          url: data.publicUrl, // Esta URL es 100% correcta
           guestName: guestName === "anonimo" ? "Anónimo" : guestName,
           createdAt: file.created_at ? new Date(file.created_at) : new Date(),
         }
