@@ -58,17 +58,16 @@ export function PhotoUploadModal({ isOpen, onClose, onUploadSuccess }: PhotoUplo
         const sanitizedName = guestName.trim().replace(/[^a-zA-Z0-9]/g, '_') || 'anonimo'
         const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
         
-        // Se mantiene afuera en la raíz con el prefijo "guest_" para que la lectura actúe perfectamente bien
-        const fileName = `guest_${sanitizedName}_${timestamp}_${randomId}.${extension}`
+        // CORRECCIÓN: Ahora guarda explícitamente dentro de la carpeta 'invitados'
+        const fileName = `invitados/guest_${sanitizedName}_${timestamp}_${randomId}.${extension}`
 
         console.log('[v0] Uploading to bucket:', BUCKET_NAME, 'file:', fileName)
 
-        // CORRECCIÓN AQUÍ: Agregamos contentType: file.type para que Supabase guarde el archivo como una imagen real
         const { error } = await supabase.storage
           .from(BUCKET_NAME)
           .upload(fileName, file, {
             cacheControl: '3600',
-            contentType: file.type, // <-- ESTA LÍNEA CORRIGE EL ERROR Y PERMITE VER LA IMAGEN
+            contentType: file.type, // Asegura que Supabase reconozca que es una imagen real para mostrarla
             upsert: false
           })
 
