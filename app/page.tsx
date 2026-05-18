@@ -24,8 +24,6 @@ interface GuestPhoto {
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://figtuyydceiqcqqlyzhj.supabase.co"
-// FORZAMOS EL NOMBRE EXACTO DEL BUCKET EN MAYÚSCULAS COMO ESTÁ EN TU PANEL
-const ACTUAL_BUCKET = "FOTOS"
 
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -35,43 +33,44 @@ export default function GalleryPage() {
   const [error, setError] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // Fetch main gallery photos using Supabase client
+  // 1. CARGAR FOTOS PRINCIPALES (PRUEBA CON AMBOS BUCKETS: "fotos" y "FOTOS")
   useEffect(() => {
     async function fetchPhotos() {
       try {
-        console.log("[v0] Fetching photos from bucket:", ACTUAL_BUCKET)
+        console.log("[v0] Intentando cargar fotos principales...")
         
-        const { data: files, error } = await supabase.storage
-          .from(ACTUAL_BUCKET)
-          .list("", {
-            limit: 100,
-            offset: 0,
-          })
+        // Intentamos primero con minúsculas que era como funcionaba originalmente
+        let bucketName = "fotos"
+        let { data: files, error: listError } = await supabase.storage
+          .from(bucketName)
+          .list("", { limit: 100, offset: 0 })
 
-        if (error) {
-          console.error("[v0] Supabase list error:", error)
-          throw error
+        // Si da error o viene vacío, intentamos con Mayúsculas
+        if (listError || !files || files.length === 0) {
+          console.log("[v0] No se hallaron fotos en 'fotos', probando con 'FOTOS'...")
+          bucketName = "FOTOS"
+          const { data: retryFiles } = await supabase.storage
+            .from(bucketName)
+            .list("", { limit: 100, offset: 0 })
+          files = retryFiles
         }
-
-        console.log("[v0] Files received:", files)
 
         const imageFiles = (files || []).filter((file) => {
           const ext = file.name.toLowerCase().split(".").pop()
-          const isGuestPhoto = file.name.startsWith("guest_") || file.name === "invitados"
+          const isGuestPhoto = file.name.toLowerCase().startsWith("guest_") || file.name.toLowerCase() === "invitados"
           return !isGuestPhoto && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
         })
 
         const photoList: Photo[] = imageFiles.map((file, index: number) => ({
           id: file.id || `photo-${index}`,
-          url: `${SUPABASE_URL}/storage/v1/object/public/${ACTUAL_BUCKET}/${file.name}`,
+          url: `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${file.name}`,
           name: file.name,
         }))
 
-        console.log("[v0] Processed photos:", photoList.length)
         setPhotos(photoList)
       } catch (err) {
-        console.error("[v0] Error fetching photos:", err)
-        setError("No se pudieron cargar las fotos. Por favor, intenta de nuevo.")
+        console.error("[v0] Error trayendo fotos principales:", err)
+        setError("No se pudieron cargar las fotos principales.")
       } finally {
         setLoading(false)
       }
@@ -80,22 +79,27 @@ export default function GalleryPage() {
     fetchPhotos()
   }, [])
 
-  // Fetch guest photos looking exclusively inside the 'invitados' folder
+  // 2. CARGAR FOTOS DE INVITADOS (BUSCA EN AMBAS CARPETAS Y BUCKETS)
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
-      console.log("[v0] Fetching guest photos from 'invitados' folder")
+      console.log("[v0] Buscando fotos de invitados...")
       
-      const { data: files, error } = await supabase.storage
-        .from(ACTUAL_BUCKET)
-        .list("invitados", {
-          limit: 100,
-          offset: 0,
-        })
+      // Intentamos buscar en el bucket 'FOTOS' carpeta 'invitados'
+      let currentBucket = "FOTOS"
+      let currentFolder = "invitados"
+      
+      let { data: files, error: guestError } = await supabase.storage
+        .from(currentBucket)
+        .list(currentFolder, { limit: 100, offset: 0 })
 
-      if (error) {
-        console.error("[v0] Supabase guest list error:", error)
-        throw error
+      // Si viene vacío, probamos combinaciones con minúsculas
+      if (guestError || !files || files.length === 0) {
+        currentBucket = "fotos"
+        const { data: retryFiles } = await supabase.storage
+          .from(currentBucket)
+          .list(currentFolder, { limit: 100, offset: 0 })
+        files = retryFiles
       }
 
       const imageFiles = (files || []).filter((file) => {
@@ -104,13 +108,12 @@ export default function GalleryPage() {
       })
 
       const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
-        // 1. Extraemos el nombre limpiando de forma segura el prefijo
         const cleanName = file.name.startsWith("guest_") ? file.name.replace("guest_", "") : file.name
         const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
-        // 2. Apuntamos con la URL exacta al archivo real dentro de la carpeta usando el Bucket correcto
-        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${ACTUAL_BUCKET}/invitados/${file.name}`
+        // URL construida dinámicamente con el bucket que sí devolvió datos
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${currentBucket}/${currentFolder}/${file.name}`
 
         return {
           name: file.name,
@@ -123,7 +126,7 @@ export default function GalleryPage() {
       guestPhotoList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       setGuestPhotos(guestPhotoList)
     } catch (err) {
-      console.error("[v0] Error fetching guest photos:", err)
+      console.error("[v0] Error en fotos de invitados:", err)
     } finally {
       setGuestLoading(false)
     }
