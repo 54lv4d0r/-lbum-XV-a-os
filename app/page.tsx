@@ -38,19 +38,11 @@ export default function GalleryPage() {
   useEffect(() => {
     async function fetchPhotos() {
       try {
-        console.log("[v0] Fetching photos from bucket:", ACTUAL_BUCKET)
-        
         const { data: files, error } = await supabase.storage
           .from(ACTUAL_BUCKET)
-          .list("", {
-            limit: 100,
-            offset: 0,
-          })
+          .list("", { limit: 100, offset: 0 })
 
-        if (error) {
-          console.error("[v0] Supabase list error:", error)
-          throw error
-        }
+        if (error) throw error
 
         const imageFiles = (files || []).filter((file) => {
           const ext = file.name.toLowerCase().split(".").pop()
@@ -67,7 +59,7 @@ export default function GalleryPage() {
         setPhotos(photoList)
       } catch (err) {
         console.error("[v0] Error fetching photos:", err)
-        setError("No se pudieron cargar las fotos. Por favor, intenta de nuevo.")
+        setError("No se pudieron cargar las fotos principales.")
       } finally {
         setLoading(false)
       }
@@ -76,43 +68,55 @@ export default function GalleryPage() {
     fetchPhotos()
   }, [])
 
-  // Fetch guest photos looking exclusively inside the 'invitados' folder
+  // BÚSQUEDA HÍBRIDA ULTRA-SEGURA DE FOTOS DE INVITADOS
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
-      console.log("[v0] Fetching guest photos from 'invitados' folder")
       
-      const { data: files, error } = await supabase.storage
+      // Intento 1: Buscar en la carpeta 'invitados' tal cual
+      let { data: files, error: listError } = await supabase.storage
         .from(ACTUAL_BUCKET)
-        .list("invitados", {
-          limit: 100,
-          offset: 0,
-        })
+        .list("invitados", { limit: 100, offset: 0 })
 
-      if (error) {
-        console.error("[v0] Supabase guest list error:", error)
-        throw error
+      // Intento 2: Si falló o vino vacío, intentamos en la raíz del bucket por si las moscas
+      if (listError || !files || files.length === 0) {
+        console.log("[v0] Reintentando búsqueda en raíz o minúsculas...")
+        const { data: retryFiles } = await supabase.storage
+          .from(ACTUAL_BUCKET)
+          .list("", { limit: 100, offset: 0 })
+        
+        // Filtramos solo los archivos que comiencen con el prefijo de invitado
+        if (retryFiles) {
+          files = retryFiles.filter(f => f.name.includes("guest_") || f.name.includes("invitados"))
+        }
       }
 
-      console.log("[v0] Raw files inside 'invitados':", files)
+      // ALERTA DE DIAGNÓSTICO EN PANTALLA
+      const totalEncontrados = files ? files.length : 0
+      alert(`Diagnóstico Storage: Supabase leyó ${totalEncontrados} archivos en la carpeta de invitados.`);
 
-      // 1. Filtramos solo extensiones válidas de imagen que estén dentro de la carpeta
-      const imageFiles = (files || []).filter((file) => {
+      if (!files || files.length === 0) {
+        setGuestPhotos([])
+        return
+      }
+
+      const imageFiles = files.filter((file) => {
         const ext = file.name.toLowerCase().split(".").pop()
         return ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
       })
 
-      // 2. Mapeo ultra-limpio e infalible
       const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
-        // Obtenemos el nombre del archivo (ej: guest_salvador_123.jpg)
-        const pureFileName = file.name
+        // Limpiamos cualquier rastro de ruta duplicada
+        let pureFileName = file.name
+        if (pureFileName.includes("/")) {
+          pureFileName = pureFileName.split("/").pop() || file.name
+        }
         
-        // Limpiamos el prefijo para sacar el nombre del invitado
         const cleanName = pureFileName.startsWith("guest_") ? pureFileName.replace("guest_", "") : pureFileName
         const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
-        // Forzamos la estructura URL perfecta que Supabase necesita para mostrar el archivo públicamente
+        // Armamos la URL pública
         const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${ACTUAL_BUCKET}/invitados/${pureFileName}`
 
         return {
@@ -123,13 +127,10 @@ export default function GalleryPage() {
         }
       })
 
-      // Ordenar por fecha (más recientes primero)
       guestPhotoList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      
-      console.log("[v0] Final processed guest photos:", guestPhotoList)
       setGuestPhotos(guestPhotoList)
     } catch (err) {
-      console.error("[v0] Error fetching guest photos:", err)
+      console.error("[v0] Error crítico listando invitados:", err)
     } finally {
       setGuestLoading(false)
     }
