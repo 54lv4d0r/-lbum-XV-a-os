@@ -55,8 +55,8 @@ export default function GalleryPage() {
 
         const imageFiles = (files || []).filter((file) => {
           const ext = file.name.toLowerCase().split(".").pop()
-          // Exclude guest photos (those starting with "guest_")
-          const isGuestPhoto = file.name.startsWith("guest_")
+          // Excluimos la carpeta de invitados y cualquier archivo suelto antiguo
+          const isGuestPhoto = file.name.startsWith("guest_") || file.name === "invitados"
           return !isGuestPhoto && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
         })
 
@@ -79,15 +79,16 @@ export default function GalleryPage() {
     fetchPhotos()
   }, [])
 
-  // Fetch guest photos using Supabase client
+  // CORRECCIÓN: Fetch guest photos mirando exclusivamente dentro de la carpeta 'invitados'
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
-      console.log("[v0] Fetching guest photos with prefix guest_")
+      console.log("[v0] Fetching guest photos from 'invitados' folder")
       
+      // Indicamos a Supabase que liste los archivos internos de la carpeta 'invitados'
       const { data: files, error } = await supabase.storage
         .from(BUCKET_NAME)
-        .list("", {
+        .list("invitados", {
           limit: 100,
           offset: 0,
         })
@@ -97,30 +98,30 @@ export default function GalleryPage() {
         throw error
       }
 
-      console.log("[v0] All files for guest check:", files)
+      console.log("[v0] Files received inside 'invitados':", files)
 
-      // Filter only guest photos (those starting with "guest_")
+      // Filtramos los formatos de imagen correctos
       const imageFiles = (files || []).filter((file) => {
         const ext = file.name.toLowerCase().split(".").pop()
-        const isGuestPhoto = file.name.startsWith("guest_")
-        return isGuestPhoto && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
+        return ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
       })
 
       const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
-        // Extract guest name from filename pattern: guest_guestname_timestamp_randomid.ext
+        // Limpiamos el prefijo 'guest_' del nombre interno para extraer quién lo envió
         const fileName = file.name.replace("guest_", "")
         const parts = fileName.split("_")
-        const guestName = parts[0]?.replace(/_/g, " ") || "Invitado"
+        const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
         return {
           name: file.name,
-          url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${file.name}`,
+          // CORRECCIÓN DE LA URL: Añadimos /invitados/ en la ruta para que se previsualice la imagen real
+          url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/invitados/${file.name}`,
           guestName: guestName === "anonimo" ? "Anónimo" : guestName,
           createdAt: file.created_at ? new Date(file.created_at) : new Date(),
         }
       })
 
-      // Sort by date, newest first
+      // Ordenar por fecha, más reciente primero
       guestPhotoList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
       console.log("[v0] Processed guest photos:", guestPhotoList.length)
@@ -137,7 +138,7 @@ export default function GalleryPage() {
   }, [fetchGuestPhotos])
 
   const handleUploadSuccess = () => {
-    // Refresh guest photos after successful upload
+    // Actualiza las fotos tras una subida exitosa
     fetchGuestPhotos()
   }
 
