@@ -1,9 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://figtuyydceiqcqqlyzhj.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseUrl = 'https://figtuyydceiqcqqlyzhj.supabase.co'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabaseAnonKey =
+  'sb_publishable_9kEjhPikMyOzdOnPcoaAWA_7WKOrkCi'
+
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey
+)
 
 export const BUCKET_NAME = 'fotos'
 export const GUEST_FOLDER = 'invitados'
