@@ -2,11 +2,12 @@
   "name": "my-project",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+ "scripts": {
     "dev": "next dev",
-    "build": "mkdir -p .v0 && touch .v0/inject-built-with-v0.mjs && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
