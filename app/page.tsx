@@ -55,7 +55,6 @@ export default function GalleryPage() {
 
         const imageFiles = (files || []).filter((file) => {
           const ext = file.name.toLowerCase().split(".").pop()
-          // Excluimos la carpeta de invitados y cualquier archivo suelto antiguo
           const isGuestPhoto = file.name.startsWith("guest_") || file.name === "invitados"
           return !isGuestPhoto && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
         })
@@ -79,13 +78,12 @@ export default function GalleryPage() {
     fetchPhotos()
   }, [])
 
-  // CORRECCIÓN: Fetch guest photos mirando exclusivamente dentro de la carpeta 'invitados'
+  // Fetch guest photos looking exclusively inside the 'invitados' folder
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
       console.log("[v0] Fetching guest photos from 'invitados' folder")
       
-      // Indicamos a Supabase que liste los archivos internos de la carpeta 'invitados'
       const { data: files, error } = await supabase.storage
         .from(BUCKET_NAME)
         .list("invitados", {
@@ -98,33 +96,30 @@ export default function GalleryPage() {
         throw error
       }
 
-      console.log("[v0] Files received inside 'invitados':", files)
-
-      // Filtramos los formatos de imagen correctos
       const imageFiles = (files || []).filter((file) => {
         const ext = file.name.toLowerCase().split(".").pop()
         return ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
       })
 
+      // ¡AQUÍ ESTÁ EL BLOQUE CORREGIDO!
       const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
-        // Limpiamos el prefijo 'guest_' del nombre interno para extraer quién lo envió
-        const fileName = file.name.replace("guest_", "")
-        const parts = fileName.split("_")
+        // 1. Extraemos el nombre limpiando de forma segura el prefijo
+        const cleanName = file.name.startsWith("guest_") ? file.name.replace("guest_", "") : file.name
+        const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
+        // 2. Apuntamos con la URL exacta al archivo real dentro de la carpeta
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/invitados/${file.name}`
+
         return {
           name: file.name,
-          // CORRECCIÓN DE LA URL: Añadimos /invitados/ en la ruta para que se previsualice la imagen real
-          url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/invitados/${file.name}`,
+          url: publicUrl,
           guestName: guestName === "anonimo" ? "Anónimo" : guestName,
           createdAt: file.created_at ? new Date(file.created_at) : new Date(),
         }
       })
 
-      // Ordenar por fecha, más reciente primero
       guestPhotoList.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-
-      console.log("[v0] Processed guest photos:", guestPhotoList.length)
       setGuestPhotos(guestPhotoList)
     } catch (err) {
       console.error("[v0] Error fetching guest photos:", err)
@@ -138,11 +133,9 @@ export default function GalleryPage() {
   }, [fetchGuestPhotos])
 
   const handleUploadSuccess = () => {
-    // Actualiza las fotos tras una subida exitosa
     fetchGuestPhotos()
   }
 
-  // Use the first photo as the cover image
   const coverImage = photos.length > 0 ? photos[0].url : undefined
 
   return (
