@@ -8,7 +8,7 @@ import { GuestPhotosSection } from "@/components/guest-photos-section"
 import { PhotoUploadModal } from "@/components/photo-upload-modal"
 import { Plus, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase, BUCKET_NAME } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 
 interface Photo {
   id: string
@@ -24,6 +24,7 @@ interface GuestPhoto {
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://figtuyydceiqcqqlyzhj.supabase.co"
+const ACTUAL_BUCKET = "FOTOS"
 
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -37,10 +38,10 @@ export default function GalleryPage() {
   useEffect(() => {
     async function fetchPhotos() {
       try {
-        console.log("[v0] Fetching photos from bucket:", BUCKET_NAME)
+        console.log("[v0] Fetching photos from bucket:", ACTUAL_BUCKET)
         
         const { data: files, error } = await supabase.storage
-          .from(BUCKET_NAME)
+          .from(ACTUAL_BUCKET)
           .list("", {
             limit: 100,
             offset: 0,
@@ -51,8 +52,6 @@ export default function GalleryPage() {
           throw error
         }
 
-        console.log("[v0] Files received:", files)
-
         const imageFiles = (files || []).filter((file) => {
           const ext = file.name.toLowerCase().split(".").pop()
           const isGuestPhoto = file.name.startsWith("guest_") || file.name === "invitados"
@@ -61,11 +60,10 @@ export default function GalleryPage() {
 
         const photoList: Photo[] = imageFiles.map((file, index: number) => ({
           id: file.id || `photo-${index}`,
-          url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/${file.name}`,
+          url: `${SUPABASE_URL}/storage/v1/object/public/${ACTUAL_BUCKET}/${file.name}`,
           name: file.name,
         }))
 
-        console.log("[v0] Processed photos:", photoList.length)
         setPhotos(photoList)
       } catch (err) {
         console.error("[v0] Error fetching photos:", err)
@@ -85,7 +83,7 @@ export default function GalleryPage() {
       console.log("[v0] Fetching guest photos from 'invitados' folder")
       
       const { data: files, error } = await supabase.storage
-        .from(BUCKET_NAME)
+        .from(ACTUAL_BUCKET)
         .list("invitados", {
           limit: 100,
           offset: 0,
@@ -101,18 +99,26 @@ export default function GalleryPage() {
         return ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
       })
 
-      // ¡AQUÍ ESTÁ EL BLOQUE CORREGIDO!
+      // ¡AQUÍ ESTÁ LA DETECCIÓN INTELIGENTE DE RUTA COMPLETA!
       const guestPhotoList: GuestPhoto[] = imageFiles.map((file) => {
-        // 1. Extraemos el nombre limpiando de forma segura el prefijo
-        const cleanName = file.name.startsWith("guest_") ? file.name.replace("guest_", "") : file.name
+        // 1. Extraemos el nombre base del archivo puro (quitando la palabra 'invitados/' si viene integrada)
+        let pureFileName = file.name
+        if (pureFileName.startsWith("invitados/")) {
+          pureFileName = pureFileName.replace("invitados/", "")
+        }
+
+        // 2. Extraemos el nombre del invitado para la etiqueta de texto debajo de la foto
+        const cleanName = pureFileName.startsWith("guest_") ? pureFileName.replace("guest_", "") : pureFileName
         const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
-        // 2. Apuntamos con la URL exacta al archivo real dentro de la carpeta
-        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}/invitados/${file.name}`
+        // 3. Construimos la URL pública definitiva asegurándonos de no duplicar subcarpetas
+        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${ACTUAL_BUCKET}/invitados/${pureFileName}`
+
+        console.log("[v0] URL final calculada:", publicUrl)
 
         return {
-          name: file.name,
+          name: pureFileName,
           url: publicUrl,
           guestName: guestName === "anonimo" ? "Anónimo" : guestName,
           createdAt: file.created_at ? new Date(file.created_at) : new Date(),
