@@ -2,19 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { HeroBanner } from "@/components/hero-banner"
-import { MasonryGallery } from "@/components/masonry-gallery"
 import { GallerySkeleton } from "@/components/gallery-skeleton"
 import { GuestPhotosSection } from "@/components/guest-photos-section"
 import { PhotoUploadModal } from "@/components/photo-upload-modal"
 import { Plus, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
-
-interface Photo {
-  id: string
-  url: string
-  name: string
-}
 
 interface GuestPhoto {
   name: string
@@ -23,72 +16,20 @@ interface GuestPhoto {
   createdAt: Date
 }
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://figtuyydceiqcqqlyzhj.supabase.co"
+
 export default function GalleryPage() {
-  const [photos, setPhotos] = useState<Photo[]>([])
   const [guestPhotos, setGuestPhotos] = useState<GuestPhoto[]>([])
-  const [loading, setLoading] = useState(true)
   const [guestLoading, setGuestLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // 1. CARGAR FOTOS PRINCIPALES (CON BÚSQUEDA HÍBRIDA DE BUCKET)
-  useEffect(() => {
-    async function fetchPhotos() {
-      try {
-        console.log("[v0] Intentando cargar fotos principales...")
-        
-        let bucketName = "fotos" // Intento 1: minúsculas
-        let { data: files, error: listError } = await supabase.storage
-          .from(bucketName)
-          .list("", { limit: 100, offset: 0 })
-
-        if (listError || !files || files.length === 0) {
-          console.log("[v0] Probando con 'FOTOS' (mayúsculas)...")
-          bucketName = "FOTOS" // Intento 2: mayúsculas
-          const { data: retryFiles } = await supabase.storage
-            .from(bucketName)
-            .list("", { limit: 100, offset: 0 })
-          files = retryFiles
-        }
-
-        const imageFiles = (files || []).filter((file) => {
-          const ext = file.name.toLowerCase().split(".").pop()
-          const isGuest = file.name.toLowerCase().startsWith("guest_") || file.name.toLowerCase() === "invitados"
-          return !isGuest && ["jpg", "jpeg", "png", "gif", "webp", "heic"].includes(ext || "")
-        })
-
-        const photoList = imageFiles.map((file, index) => {
-          // GENERACIÓN DE URL OFICIAL DE SUPABASE (Infalible)
-          const { data } = supabase.storage
-            .from(bucketName)
-            .getPublicUrl(file.name)
-            
-          return {
-            id: file.id || `photo-${index}`,
-            url: data.publicUrl, // La URL ya viene perfecta
-            name: file.name,
-          }
-        })
-
-        setPhotos(photoList)
-      } catch (err) {
-        console.error("[v0] Error trayendo fotos principales:", err)
-        setError("No se pudieron cargar las fotos principales.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPhotos()
-  }, [])
-
-  // 2. CARGAR FOTOS DE INVITADOS (USANDO GETPUBLICURL OFICIAL)
+  // LEER LAS FOTOS DE LOS INVITADOS (TU SECCIÓN CORRECTA)
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
       console.log("[v0] Buscando fotos de invitados...")
       
-      let currentBucket = "FOTOS" // Intento 1: mayúsculas (donde están las nuevas subidas)
+      let currentBucket = "FOTOS"
       const currentFolder = "invitados"
       
       let { data: files, error: guestError } = await supabase.storage
@@ -96,15 +37,12 @@ export default function GalleryPage() {
         .list(currentFolder, { limit: 100, offset: 0 })
 
       if (guestError || !files || files.length === 0) {
-        console.log("[v0] Probando con 'fotos' (minúsculas) carpeta invitados...")
-        currentBucket = "fotos" // Intento 2: minúsculas
+        currentBucket = "fotos"
         const { data: retryFiles } = await supabase.storage
           .from(currentBucket)
           .list(currentFolder, { limit: 100, offset: 0 })
         files = retryFiles
       }
-
-      console.log(`[v0] Archivos leídos en ${currentBucket}/${currentFolder}:`, files?.length || 0)
 
       const imageFiles = (files || []).filter((file) => {
         const ext = file.name.toLowerCase().split(".").pop()
@@ -112,20 +50,17 @@ export default function GalleryPage() {
       })
 
       const guestPhotoList = imageFiles.map((file) => {
-        // Limpieza del nombre para sacar el invitado
         const cleanName = file.name.startsWith("guest_") ? file.name.replace("guest_", "") : file.name
         const parts = cleanName.split("_")
         const guestName = parts[0]?.replace(/-/g, " ") || "Invitado"
         
-        // ¡LA SOLUCIÓN! GENERACIÓN DE URL OFICIAL DE SUPABASE
-        // Le pasamos la ruta completa 'invitados/nombre_archivo.jpg'
         const { data } = supabase.storage
           .from(currentBucket)
           .getPublicUrl(`${currentFolder}/${file.name}`)
 
         return {
           name: file.name,
-          url: data.publicUrl, // Esta URL es 100% correcta
+          url: data.publicUrl,
           guestName: guestName === "anonimo" ? "Anónimo" : guestName,
           createdAt: file.created_at ? new Date(file.created_at) : new Date(),
         }
@@ -148,14 +83,14 @@ export default function GalleryPage() {
     fetchGuestPhotos()
   }
 
-  const coverImage = photos.length > 0 ? photos[0].url : undefined
+  const coverImage = guestPhotos.length > 0 ? guestPhotos[0].url : undefined
 
   return (
     <main className="min-h-screen bg-background">
       <HeroBanner
         title="Mis XV Años"
         subtitle="Una hermosa colección de recuerdos celebrando este momento tan especial"
-        photoCount={photos.length}
+        photoCount={guestPhotos.length}
         coverImage={coverImage}
       />
 
@@ -165,7 +100,7 @@ export default function GalleryPage() {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Galería de Fotos</h2>
             <p className="text-sm text-muted-foreground">
-              {loading ? "Cargando..." : `${photos.length} fotos en el álbum`}
+              {guestLoading ? "Cargando..." : `${guestPhotos.length} fotos compartidas`}
             </p>
           </div>
           <Button onClick={() => setIsUploadModalOpen(true)} className="gap-2">
@@ -175,27 +110,17 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {loading ? (
-          <GallerySkeleton />
-        ) : error ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">{error}</p>
-          </div>
-        ) : photos.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">No se encontraron fotos en la galería.</p>
-          </div>
-        ) : (
-          <MasonryGallery photos={photos} />
-        )}
-      </div>
+      {/* ¡ELIMINADO EL BLOQUE REDUNDANTE DEL MEDIO!
+        Aquí es donde estaba la sección vacía que decía "No se encontraron fotos en la galería"
+      */}
 
-      {/* Guest Photos Section */}
-      <GuestPhotosSection 
-        photos={guestPhotos} 
-        isLoading={guestLoading} 
-      />
+      {/* TU SECCIÓN FAVORITA: MOMENTOS COMPARTIDOS (Sube directamente aquí) */}
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <GuestPhotosSection 
+          photos={guestPhotos} 
+          isLoading={guestLoading} 
+        />
+      </div>
 
       {/* Upload Modal */}
       <PhotoUploadModal
