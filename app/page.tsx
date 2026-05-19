@@ -16,19 +16,15 @@ interface GuestPhoto {
   createdAt: Date
 }
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://figtuyydceiqcqqlyzhj.supabase.co"
-
 export default function GalleryPage() {
   const [guestPhotos, setGuestPhotos] = useState<GuestPhoto[]>([])
   const [guestLoading, setGuestLoading] = useState(true)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
 
-  // LEER LAS FOTOS DE LOS INVITADOS (TU SECCIÓN CORRECTA)
+  // LEER LAS FOTOS DE LOS INVITADOS
   const fetchGuestPhotos = useCallback(async () => {
     try {
       setGuestLoading(true)
-      console.log("[v0] Buscando fotos de invitados...")
-      
       let currentBucket = "FOTOS"
       const currentFolder = "invitados"
       
@@ -83,7 +79,9 @@ export default function GalleryPage() {
     fetchGuestPhotos()
   }
 
-  const coverImage = guestPhotos.length > 0 ? guestPhotos[0].url : undefined
+  // ¡AQUÍ ESTÁ EL CAMBIO ESENCIAL!
+  // Al poner "/portada.jpg", Next.js sabe automáticamente que debe buscar el archivo dentro de la carpeta 'public'.
+  const coverImage = "/portada.jpg"
 
   return (
     <main className="min-h-screen bg-background">
@@ -110,11 +108,7 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* ¡ELIMINADO EL BLOQUE REDUNDANTE DEL MEDIO!
-        Aquí es donde estaba la sección vacía que decía "No se encontraron fotos en la galería"
-      */}
-
-      {/* TU SECCIÓN FAVORITA: MOMENTOS COMPARTIDOS (Sube directamente aquí) */}
+      {/* Sección Momentos Compartidos */}
       <div className="max-w-7xl mx-auto px-4 py-4">
         <GuestPhotosSection 
           photos={guestPhotos} 
