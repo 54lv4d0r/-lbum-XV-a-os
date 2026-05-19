@@ -81,7 +81,7 @@ export default function GalleryPage() {
 
   // ¡AQUÍ ESTÁ EL CAMBIO ESENCIAL!
   // Al poner "/portada.jpg", Next.js sabe automáticamente que debe buscar el archivo dentro de la carpeta 'public'.
-  const coverImage = "/portada.jpg"
+  const coverImage = "/banner_fabianna.gif"
 
   return (
     <main className="min-h-screen bg-background">
