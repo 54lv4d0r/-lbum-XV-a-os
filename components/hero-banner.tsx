@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Camera, Sparkles } from "lucide-react"
 
 interface HeroBannerProps {
-  title: string
+  title: React.ReactNode // Cambiado a ReactNode para aceptar el salto de línea <br /> sin errores
   subtitle?: string
   photoCount: number
   coverImage?: string
@@ -15,7 +15,7 @@ export function HeroBanner({ title, subtitle, photoCount, coverImage }: HeroBann
   const [imageLoaded, setImageLoaded] = useState(false)
 
   return (
-    <header className="relative h-[50vh] md:h-[60vh] lg:h-[70vh] overflow-hidden">
+    <header className="relative h-[30vh] sm:h-[50vh] md:h-[60vh] lg:h-[70vh] overflow-hidden bg-background">
       {/* Background Image */}
       {coverImage && (
         <div className="absolute inset-0">
@@ -25,14 +25,18 @@ export function HeroBanner({ title, subtitle, photoCount, coverImage }: HeroBann
             fill
             priority
             sizes="100vw"
-            className={`object-cover transition-opacity duration-700 ${
+            /* ¡LA MAGIA! 
+               En móviles usa 'object-contain' para que la foto se reduzca proporcionalmente sin cortarse los bordes.
+               En pantallas medianas/grandes (md:) vuelve a acoplarse con 'object-cover'.
+            */
+            className={`transition-opacity duration-700 object-contain md:object-cover object-center ${
               imageLoaded ? "opacity-100" : "opacity-0"
             }`}
             onLoad={() => setImageLoaded(true)}
           />
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 via-foreground/30 to-background" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/20 via-transparent to-foreground/20" />
+          {/* Gradient Overlays ajustados para que no tapen de negro la imagen en tonos rosa */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-background" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/10 via-transparent to-background/10" />
         </div>
       )}
 
@@ -42,39 +46,36 @@ export function HeroBanner({ title, subtitle, photoCount, coverImage }: HeroBann
       )}
 
       {/* Content */}
-      <div className="relative h-full flex flex-col items-center justify-center px-4 text-center">
+      <div className="relative h-full flex flex-col items-center justify-center px-4 text-center z-10">
         {/* Decorative Element */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-px w-12 bg-card/60" />
-          <Sparkles className="w-5 h-5 text-accent" />
-          <div className="h-px w-12 bg-card/60" />
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <div className="h-px w-12 bg-white/60" />
+          <Sparkles className="w-5 h-5 text-white animate-pulse" />
+          <div className="h-px w-12 bg-white/60" />
         </div>
 
-        {/* Title */}
-        <h1 className="text-4xl md:text-5xl lg:text-7xl font-serif font-bold text-card mb-4 text-balance drop-shadow-lg">
+        {/* Title (En vuelto en un contenedor con sombreado de texto para que resalte sobre el fondo claro) */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-4 text-balance drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] leading-tight">
           {title}
         </h1>
 
         {/* Subtitle */}
         {subtitle && (
-          <p className="text-lg md:text-xl text-card/90 max-w-2xl mx-auto mb-8 text-pretty drop-shadow-md">
+          <p className="text-sm sm:text-lg md:text-xl text-white/95 max-w-2xl mx-auto mb-6 sm:mb-8 text-pretty drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] font-light">
             {subtitle}
           </p>
         )}
 
         {/* Photo Count Badge */}
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-card/20 backdrop-blur-sm border border-card/20 text-card text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/20 backdrop-blur-md border border-white/20 text-white text-xs sm:text-sm font-medium shadow-md">
           <Camera className="w-4 h-4" />
           <span>{photoCount} Fotos</span>
         </div>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 rounded-full border-2 border-card/40 flex items-start justify-center pt-2">
-          <div className="w-1.5 h-3 bg-card/60 rounded-full animate-pulse" />
-        </div>
-      </div>
+      {/* ¡ELIMINADO POR COMPLETO EL BLOQUE DEL SCROLL INDICATOR (RATÓN)! 
+          Ya no volverá a aparecer flotando ni subiendo/bajando sobre tus botones.
+      */}
     </header>
   )
 }
