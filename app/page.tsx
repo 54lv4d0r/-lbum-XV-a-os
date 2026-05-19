@@ -87,7 +87,7 @@ export default function GalleryPage() {
     <main className="min-h-screen bg-background">
       <HeroBanner
        title={<>Mis XV Años<br />Fabianna</>}
-        subtitle="Una hermosa colección de recuerdos celebrando este momento tan especial"
+        subtitle="Ayudame a crear una hermosa colección de recuerdos"
         photoCount={guestPhotos.length}
         coverImage={coverImage}
       />
