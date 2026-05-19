@@ -4,31 +4,47 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.98 0.005 60);
-  --foreground: oklch(0.15 0.01 60);
+  /* Fondo principal: Un rosa "mamón"/nude ultra suave y elegante, perfecto para bodas y XV años */
+  --background: oklch(0.97 0.015 20);
+  
+  /* Textos principales: Un marrón/moca cenizo muy oscuro para que no se vea el negro tosco */
+  --foreground: oklch(0.25 0.03 25);
+  
+  /* Tarjetas y modales: Blanco puro para que sobresalgan del fondo */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.01 60);
+  --card-foreground: oklch(0.25 0.03 25);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.01 60);
-  --primary: oklch(0.55 0.12 60);
+  --popover-foreground: oklch(0.25 0.03 25);
+  
+  /* Botón Principal (Agregar foto): El Rosa Viejo/Palo exacto del vestido de la Quinceañera */
+  --primary: oklch(0.72 0.09 15);
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.01 60);
-  --secondary-foreground: oklch(0.15 0.01 60);
-  --muted: oklch(0.94 0.01 60);
-  --muted-foreground: oklch(0.45 0.02 60);
-  --accent: oklch(0.75 0.15 50);
-  --accent-foreground: oklch(0.15 0.01 60);
+  
+  /* Elementos secundarios y sutiles */
+  --secondary: oklch(0.94 0.02 20);
+  --secondary-foreground: oklch(0.40 0.06 20);
+  --muted: oklch(0.93 0.02 20);
+  --muted-foreground: oklch(0.50 0.03 20);
+  
+  /* Detalles de acento y corazones */
+  --accent: oklch(0.78 0.08 15);
+  --accent-foreground: oklch(0.25 0.03 25);
+  
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.90 0.02 60);
-  --input: oklch(0.92 0.01 60);
-  --ring: oklch(0.55 0.12 60);
+  
+  /* Bordes suaves que no rompen con la armonía rosa */
+  --border: oklch(0.91 0.02 20);
+  --input: oklch(0.91 0.02 20);
+  --ring: oklch(0.72 0.09 15);
+  
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.75rem;
+  
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
