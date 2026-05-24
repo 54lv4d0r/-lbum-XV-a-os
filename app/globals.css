@@ -138,8 +138,12 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    /* 2. OBLIGAMOS a que el body use la variable de fondo y ocupe toda la pantalla real */
-    @apply bg-background text-foreground min-h-screen;
+  
+  /* CORRECCIÓN DE RAÍZ: Forzamos el color rosa/crema con CSS nativo 
+     en la raíz absoluta del navegador para eliminar el fondo blanco en producción */
+  html, body {
+    background-color: #FAF4F2 !important;
+    min-h-screen: 100vh;
+    @apply text-foreground;
   }
 }
