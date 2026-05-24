@@ -82,8 +82,6 @@ export default function GalleryPage() {
   const coverImage = "/banner_fabianna02.gif"
 
   return (
-    /* Regresamos al uso de bg-background estándar para que el body y el main 
-       vayan coordinados con las variables CSS */
     <main className="min-h-screen bg-background flex flex-col">
       <HeroBanner
         title={<>Mis XV Años<br />Fabianna</>}
@@ -92,10 +90,12 @@ export default function GalleryPage() {
         coverImage={coverImage}
       />
 
-      {/* ¡EL CAMBIO SALVADOR AQUÍ! 
-         Regresamos a 'bg-background/80' para que Tailwind v4 pueda inyectar la opacidad real 
-         y reactive de golpe el efecto de difuminado fino 'backdrop-blur-md' */}
-      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-black/5">
+      {/* ¡AQUÍ ESTÁ LA CORRECCIÓN DE LA LÍNEA DIVISORA! 
+        - Quitamos por completo: 'border-b border-black/5' para eliminar esa raya tosca.
+        - Cambiamos la opacidad del fondo a '/40' (un cristal más limpio y transparente).
+        Esto hace que el banner animado y el fondo rosa nude se difuminen entre sí sin cortes duros.
+      */}
+      <div className="sticky top-0 z-40 bg-background/40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Galería de Fotos</h2>
@@ -110,7 +110,7 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Sección Momentos Compartidos con fondo nativo */}
+      {/* Sección Momentos Compartidos */}
       <div className="w-full flex-1 bg-background">
         <div className="max-w-7xl mx-auto px-4">
           <GuestPhotosSection 
