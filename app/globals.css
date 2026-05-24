@@ -137,6 +137,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Forzamos el color rosa viejo/mamón suave directo en el fondo de toda la web */
+    background-color: oklch(0.95 0.03 20) !important;
+    @apply text-foreground;
   }
 }
