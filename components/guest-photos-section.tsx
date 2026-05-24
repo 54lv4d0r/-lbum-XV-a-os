@@ -72,7 +72,8 @@ export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProp
 
   if (isLoading) {
     return (
-      <section className="py-16 px-4 bg-muted/30">
+      // LÍNEA NUEVA CORREGIDA:
+<section className="py-16 px-4 bg-background">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <div className="h-8 w-64 bg-muted rounded-lg mx-auto mb-4 animate-pulse" />
