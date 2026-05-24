@@ -41,11 +41,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    /* 1. Quitamos bg-background de aquí para que no interfiera */
+    /* 1. Limpiamos el html quitando bg-background para evitar conflictos de herencia */
     <html lang="es" className={`${playfair.variable} ${inter.variable}`}>
-      {/* 2. EL CAMBIO MAESTRO: 
-          - bg-[#FAF4F2] le mete el rosa viejo en duro directamente al cuerpo real de la web.
-          - min-h-screen obliga a este fondo rosa a estirarse infinitamente hacia abajo.
+      {/* 2. EL CAMBIO DEFINITIVO:
+          - bg-[#FAF4F2] fuerza el rosa viejo exacto directamente en el lienzo real del navegador.
+          - min-h-screen obliga al body a estirarse en todo el alto infinito de la pantalla.
       */}
       <body className="font-sans antialiased bg-[#FAF4F2] min-h-screen text-foreground">
         {children}
