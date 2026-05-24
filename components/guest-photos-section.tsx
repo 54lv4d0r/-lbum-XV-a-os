@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Camera, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Camera, X, ChevronLeft, ChevronRight, Download } from "lucide-react"
 
 interface GuestPhoto {
   name: string
@@ -18,6 +18,38 @@ interface GuestPhotosSectionProps {
 
 export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [isDownloading, setIsDownloading] = useState<string | null>(null)
+
+  // FUNCIÓN MAESTRA DE DESCARGA: Convierte la URL de Supabase en un archivo descargable real
+  const handleDownload = async (e: React.MouseEvent, photoUrl: string, guestName: string) => {
+    e.stopPropagation() // Evita que se abra el lightbox al hacer clic en descargar
+    
+    const cleanGuestName = guestName.replace(/\s+/g, "_")
+    const fileName = `Foto_de_${cleanGuestName}.jpg`
+
+    try {
+      setIsDownloading(photoUrl)
+      const response = await fetch(photoUrl)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      
+      const link = document.createElement("a")
+      link.href = blobUrl
+      link.download = fileName
+      document.body.appendChild(link)
+      link.click()
+      
+      // Limpieza de memoria
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      console.error("Error al descargar la imagen:", error)
+      // Alternativa directa si falla el fetch por CORS
+      window.open(photoUrl, "_blank")
+    } finally {
+      setIsDownloading(null)
+    }
+  }
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -82,7 +114,7 @@ export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProp
               Aún no hay fotos de invitados
             </p>
             <p className="text-sm text-muted-foreground">
-              ¡Sé el primero en compartir un momento especial!
+              ¡Sé el primero en compartir un momentoo especial!
             </p>
           </div>
         ) : (
@@ -91,12 +123,12 @@ export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProp
               <div
                 key={photo.name}
                 onClick={() => setSelectedIndex(index)}
-                className="group cursor-pointer"
+                className="group cursor-pointer relative"
               >
                 {/* Polaroid-style frame */}
                 <div className="bg-card rounded-sm shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-rotate-1 hover:scale-105">
                   {/* Photo area with white border */}
-                  <div className="p-3 pb-0">
+                  <div className="p-3 pb-0 relative">
                     <div className="relative aspect-square overflow-hidden bg-muted">
                       <Image
                         src={photo.url}
@@ -105,22 +137,44 @@ export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProp
                         className="object-cover"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                       />
-                      {/* Subtle overlay on hover */}
-                      <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
+                      
+                      {/* Capa oscura que aparece en Hover (PC) o fija en móviles */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        {/* BOTÓN FLOTANTE INDIVIDUAL EN LA MINIATURA */}
+                        <button
+                          onClick={(e) => handleDownload(e, photo.url, photo.guestName)}
+                          className="p-3 rounded-full bg-white text-primary shadow-xl opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:scale-110 active:scale-95"
+                          title="Descargar esta foto"
+                          disabled={isDownloading === photo.url}
+                        >
+                          <Download className={`w-5 h-5 ${isDownloading === photo.url ? "animate-bounce" : ""}`} />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  
                   {/* Caption area */}
-                  <div className="p-4 pt-3">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {photo.guestName}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {photo.createdAt.toLocaleDateString('es-MX', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </p>
+                  <div className="p-4 pt-3 flex items-center justify-between">
+                    <div className="truncate max-w-[75%]">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {photo.guestName}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {photo.createdAt.toLocaleDateString('es-MX', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Botoncito de descarga alternativo visible siempre en celular */}
+                    <button
+                      onClick={(e) => handleDownload(e, photo.url, photo.guestName)}
+                      className="md:hidden p-2 rounded-full bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -132,14 +186,27 @@ export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProp
       {/* Lightbox */}
       {selectedIndex !== null && (
         <div className="fixed inset-0 z-50 bg-foreground/95 flex items-center justify-center">
-          {/* Close button */}
-          <button
-            onClick={() => setSelectedIndex(null)}
-            className="absolute top-4 right-4 z-10 p-3 rounded-full bg-card/10 hover:bg-card/20 text-card transition-colors"
-            aria-label="Cerrar"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          {/* Botones superiores del menú del Lightbox */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            {/* BOTÓN DE DESCARGA DENTRO DE LA FOTO EN GRANDE */}
+            <button
+              onClick={(e) => handleDownload(e, photos[selectedIndex].url, photos[selectedIndex].guestName)}
+              className="p-3 rounded-full bg-card/10 hover:bg-card/20 text-card transition-colors flex items-center gap-2 border border-card/10"
+              title="Descargar Foto"
+            >
+              <Download className="w-5 h-5" />
+              <span className="text-xs hidden sm:inline">Descargar</span>
+            </button>
+
+            {/* Close button */}
+            <button
+              onClick={() => setSelectedIndex(null)}
+              className="p-3 rounded-full bg-card/10 hover:bg-card/20 text-card transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
           {/* Navigation */}
           {selectedIndex > 0 && (
@@ -162,7 +229,7 @@ export function GuestPhotosSection({ photos, isLoading }: GuestPhotosSectionProp
           )}
 
           {/* Polaroid frame in lightbox */}
-          <div className="bg-card p-4 pb-16 rounded-sm shadow-2xl max-w-3xl max-h-[85vh] mx-4">
+          <div className="bg-card p-4 pb-16 rounded-sm shadow-2xl max-w-3xl max-h-[85vh] mx-4 relative">
             <div className="relative">
               <Image
                 src={photos[selectedIndex].url}
