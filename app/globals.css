@@ -4,13 +4,14 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Fondo principal: Un rosa "mamón"/nude ultra suave y elegante, perfecto para bodas y XV años */
-  --background: oklch(0.97 0.015 20);
+  /* ¡CAMBIO DEFINITIVO! Ajustamos la variable original a un rosa mamón/nude pastel más cálido, 
+     elegante y definido para que deje de camuflarse como blanco puro */
+  --background: oklch(0.93 0.035 20);
   
   /* Textos principales: Un marrón/moca cenizo muy oscuro para que no se vea el negro tosco */
   --foreground: oklch(0.25 0.03 25);
   
-  /* Tarjetas y modales: Blanco puro para que sobresalgan del fondo */
+  /* Tarjetas Polaroid y modales: Blanco puro para que resalten hermoso sobre el fondo rosa */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.25 0.03 25);
   --popover: oklch(1 0 0);
@@ -21,9 +22,9 @@
   --primary-foreground: oklch(1 0 0);
   
   /* Elementos secundarios y sutiles */
-  --secondary: oklch(0.94 0.02 20);
+  --secondary: oklch(0.92 0.03 20);
   --secondary-foreground: oklch(0.40 0.06 20);
-  --muted: oklch(0.93 0.02 20);
+  --muted: oklch(0.91 0.03 20);
   --muted-foreground: oklch(0.50 0.03 20);
   
   /* Detalles de acento y corazones */
@@ -34,8 +35,8 @@
   --destructive-foreground: oklch(0.577 0.245 27.325);
   
   /* Bordes suaves que no rompen con la armonía rosa */
-  --border: oklch(0.91 0.02 20);
-  --input: oklch(0.91 0.02 20);
+  --border: oklch(0.89 0.03 20);
+  --input: oklch(0.89 0.03 20);
   --ring: oklch(0.72 0.09 15);
   
   --chart-1: oklch(0.646 0.222 41.116);
@@ -137,8 +138,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    /* Forzamos el color rosa viejo/mamón suave directo en el fondo de toda la web */
-    background-color: oklch(0.95 0.03 20) !important;
-    @apply text-foreground;
+    /* Forzamos el mismo tono exacto directo en el fondo de raíz */
+    background-color: oklch(0.145 0 0); /* Deja que Tailwind v4 controle la base */
+    @apply bg-background text-foreground;
   }
 }
