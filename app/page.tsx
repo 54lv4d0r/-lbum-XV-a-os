@@ -82,8 +82,9 @@ export default function GalleryPage() {
   const coverImage = "/banner_fabianna02.gif"
 
   return (
-    /* Forzamos el color rosa/crema [#FAF4F2] en toda la pantalla con min-h-screen */
-    <main className="min-h-screen bg-[#FAF4F2] flex flex-col">
+    /* Regresamos al uso de bg-background estándar para que el body y el main 
+       vayan coordinados con las variables CSS */
+    <main className="min-h-screen bg-background flex flex-col">
       <HeroBanner
         title={<>Mis XV Años<br />Fabianna</>}
         subtitle="Ayudame a crear una hermosa colección de recuerdos"
@@ -91,8 +92,10 @@ export default function GalleryPage() {
         coverImage={coverImage}
       />
 
-      {/* Action Bar - Integrada al fondo rosa */}
-      <div className="sticky top-0 z-40 bg-[#FAF4F2]/90 backdrop-blur-md border-b border-black/5">
+      {/* ¡EL CAMBIO SALVADOR AQUÍ! 
+         Regresamos a 'bg-background/80' para que Tailwind v4 pueda inyectar la opacidad real 
+         y reactive de golpe el efecto de difuminado fino 'backdrop-blur-md' */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-black/5">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Galería de Fotos</h2>
@@ -107,8 +110,8 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Sección Momentos Compartidos - Pintada con el fondo correcto */}
-      <div className="w-full flex-1 bg-[#FAF4F2]">
+      {/* Sección Momentos Compartidos con fondo nativo */}
+      <div className="w-full flex-1 bg-background">
         <div className="max-w-7xl mx-auto px-4">
           <GuestPhotosSection 
             photos={guestPhotos} 
@@ -117,15 +120,14 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Upload Modal */}
       <PhotoUploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         onUploadSuccess={handleUploadSuccess}
       />
 
-      {/* Footer - Removido el color grisáceo viejo para que sea rosa continuo */}
-      <footer className="border-t border-black/5 py-8 bg-[#FAF4F2]">
+      {/* Footer continuo en armonía */}
+      <footer className="border-t border-black/5 py-8 bg-background">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 text-muted-foreground">
             <span className="text-sm">Recuerdos capturados con</span>
