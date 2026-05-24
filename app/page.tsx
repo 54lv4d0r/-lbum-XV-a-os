@@ -90,12 +90,12 @@ export default function GalleryPage() {
         coverImage={coverImage}
       />
 
-      {/* ¡AQUÍ ESTÁ LA CORRECCIÓN DE LA LÍNEA DIVISORA! 
-        - Quitamos por completo: 'border-b border-black/5' para eliminar esa raya tosca.
-        - Cambiamos la opacidad del fondo a '/40' (un cristal más limpio y transparente).
-        Esto hace que el banner animado y el fondo rosa nude se difuminen entre sí sin cortes duros.
+      {/* AJUSTE DE PARÁMETROS:
+        - bg-background/30: Bajamos el color al 30% de opacidad para que sea un cristal muy transparente.
+        - backdrop-blur-xl: Subimos el difuminado a un nivel extra grande.
+        De esta forma, el paso entre el banner y el fondo se desvanece de forma densa y borrosa sin cortes duros.
       */}
-      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+      <div className="sticky top-0 z-40 bg-background/30 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Galería de Fotos</h2>
