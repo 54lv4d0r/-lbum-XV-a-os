@@ -95,7 +95,7 @@ export default function GalleryPage() {
         - Cambiamos la opacidad del fondo a '/40' (un cristal más limpio y transparente).
         Esto hace que el banner animado y el fondo rosa nude se difuminen entre sí sin cortes duros.
       */}
-      <div className="sticky top-0 z-40 bg-background/75 backdrop-blur-md">
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Galería de Fotos</h2>
