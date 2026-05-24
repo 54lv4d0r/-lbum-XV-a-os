@@ -41,8 +41,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${playfair.variable} ${inter.variable} bg-background`}>
-      <body className="font-sans antialiased">
+    /* 1. Quitamos bg-background de aquí para que no interfiera */
+    <html lang="es" className={`${playfair.variable} ${inter.variable}`}>
+      {/* 2. EL CAMBIO MAESTRO: 
+          - bg-[#FAF4F2] le mete el rosa viejo en duro directamente al cuerpo real de la web.
+          - min-h-screen obliga a este fondo rosa a estirarse infinitamente hacia abajo.
+      */}
+      <body className="font-sans antialiased bg-[#FAF4F2] min-h-screen text-foreground">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
