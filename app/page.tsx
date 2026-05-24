@@ -95,7 +95,7 @@ export default function GalleryPage() {
         - backdrop-blur-xl: Subimos el difuminado a un nivel extra grande.
         De esta forma, el paso entre el banner y el fondo se desvanece de forma densa y borrosa sin cortes duros.
       */}
-      <div className="sticky top-0 z-40 bg-background/30 backdrop-blur-xl">
+      <div className="sticky top-0 z-40 bg-background/15 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Galería de Fotos</h2>
